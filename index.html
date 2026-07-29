@@ -6,13 +6,10 @@
   <title>ResistoCraft | Spicen Tech Engine</title>
   
   <!-- PWA Configuration -->
-  <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="ResistoCraft">
+  <!-- PWA Requirements -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a73e8">
   
-  <!-- Inline Web Manifest for Native Installation -->
-  <link rel="manifest" href='data:application/manifest+json,{"name":"ResistoCraft - Spicen Tech","short_name":"ResistoCraft","start_url":".","display":"standalone","background_color":"#f8fafc","theme_color":"#2563eb","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/911/911409.png","sizes":"192x192","type":"image/png"}]}'>
 
   <style>
     :root {
@@ -121,7 +118,7 @@
         <strong style="color:#1e40af;">Install ResistoCraft App</strong>
         <p style="font-size:0.8rem; color:#3b82f6;">Use offline directly from your home screen.</p>
       </div>
-      <button class="pwa-btn" onclick="installApp()">Install App</button>
+      <button class="pwa-btn" onclick="triggerAppInstall()">Install App</button>
     </div>
 
     <!-- Engine Mode Tabs -->
@@ -567,6 +564,40 @@
         const blob = new Blob([swCode], { type: 'application/javascript' });
         navigator.serviceWorker.register(URL.createObjectURL(blob));
       }
+    }
+
+    // --- PWA Installation Handler ---
+    let deferredPrompt;
+
+    // 1. Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker Registered'))
+          .catch(err => console.log('Service Worker Registration Failed', err));
+      });
+    }
+
+    // 2. Listen for the browser's install event
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      // Reveal the install banner once the browser approves installation
+      document.getElementById('installBanner').style.display = 'flex';
+    });
+
+    // 3. Trigger the install prompt when button is clicked
+    function triggerAppInstall() {
+      if (!deferredPrompt) return;
+      
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted PWA installation');
+          document.getElementById('installBanner').style.display = 'none';
+        }
+        deferredPrompt = null;
+      });
     }
   </script>
 </body>
